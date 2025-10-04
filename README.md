@@ -118,6 +118,43 @@ The Tkinter GUI includes powerful date range selection for viewing historical da
 3. Fine-tune with time fields
 ```
 
+## Magnetic Flux 3D Visualization
+
+The project includes a specialized utility for 3D visualization of magnetic flux data:
+
+```bash
+# Interactive 3D plots of last 24 hours
+python magnetic_flux_3d_plotter.py --hours 24
+
+# Save all plot types for specific time range
+python magnetic_flux_3d_plotter.py --start "2025-10-03 10:00" --end "2025-10-03 18:00" --save
+
+# High-quality PDF plots
+python magnetic_flux_3d_plotter.py --hours 6 --save --format pdf --output-dir plots/
+
+# 2D polar plot of XY plane magnetic field
+python magnetic_flux_3d_plotter.py --hours 12 --plots polar
+
+# Run examples script
+./examples_magnetic_flux.sh
+```
+
+### Magnetic Flux Plot Types
+
+- **3D Vector Plot**: Magnetic field vectors in 3D space with time coloring
+- **Magnitude vs Time**: Field strength and component analysis over time
+- **Direction Analysis**: Declination, inclination, and horizontal/vertical components
+- **3D Trajectory**: Path of magnetic field vector through 3D space
+- **2D Polar Plot**: XY plane magnetic field in polar coordinates with 4-panel analysis
+
+### Magnetic Field Statistics
+
+The utility provides detailed statistics including:
+- Component means and standard deviations (X, Y, Z in μT)
+- Magnetic declination and inclination angles
+- Field magnitude analysis
+- Earth's magnetic field context (typical ~50 μT)
+
 ## Usage Examples
 
 ```bash

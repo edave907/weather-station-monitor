@@ -76,3 +76,8 @@ mqtt_sample.txt
 
 # System service files (deployment specific)
 /etc/systemd/system/weather-daemon.service
+# Generated plot directories
+plots/
+demo_plots/
+test_plots/
+*_plots/
