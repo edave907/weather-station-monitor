@@ -1,0 +1,78 @@
+# Weather Station Project - .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+.env
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+weather_data.db
+
+# Log files
+*.log
+weather_daemon.log*
+daemon.log*
+
+# Calibration files (user-specific)
+weather_station_calibration.json
+
+# PID files
+*.pid
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Claude Code settings (project-specific)
+.claude/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# MQTT test data
+mqtt_sample.txt
+
+# System service files (deployment specific)
+/etc/systemd/system/weather-daemon.service

@@ -1,0 +1,18 @@
+/home/david/projects/weatherstation/weather_daemon.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 644 david david
+    postrotate
+        # Send USR1 signal to daemon to reopen log file
+        # This assumes daemon PID is stored in a file
+        if [ -f /home/david/projects/weatherstation/weather_daemon.pid ]; then
+            kill -USR1 $(cat /home/david/projects/weatherstation/weather_daemon.pid) 2>/dev/null || true
+        fi
+        # Alternative: restart systemd service if using systemd
+        # systemctl reload weather-daemon 2>/dev/null || true
+    endscript
+}

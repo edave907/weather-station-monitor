@@ -1,0 +1,8 @@
+paho-mqtt>=1.6.0
+matplotlib>=3.5.0
+numpy>=1.21.0
+tkcalendar>=1.6.0
+
+# Note: For GTK support, install system packages:
+# sudo apt install libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0
+# Then: pip install PyGObject
