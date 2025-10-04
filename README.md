@@ -1,3 +1,5 @@
+This project is very experimental, incomplete, and doesn't work correctly a lot of the time.  caveat emptor!
+
 # Weather Station Monitor
 
 A Python application that subscribes to MQTT weather data, stores it in a SQLite database, and displays real-time data using either GTK GUI or console interface.
