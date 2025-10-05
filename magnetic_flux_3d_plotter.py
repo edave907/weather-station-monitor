@@ -9,21 +9,31 @@ Features:
 - 3D vector field visualization
 - Magnitude vs time plots
 - Direction analysis (declination/inclination)
+- 2D polar plots for XY plane analysis
 - Interactive 3D plots
 - Time range selection
-- NIST SP 330 compliant units (Tesla)
+- NIST SP 330 compliant units (Tesla, converted from HMC5883L LSb values)
+- Automatic calibration loading from weather_station_calibration.json
+
+Calibration:
+The plotter automatically loads calibration values from weather_station_calibration.json
+to convert raw HMC5883L LSb values to Tesla units according to NIST SP 330 standards.
+Default: 9.174e-8 T/LSb (based on HMC5883L datasheet: 1090 LSb/Gauss)
 
 Usage:
     python magnetic_flux_3d_plotter.py [options]
 
 Examples:
-    # Plot last 24 hours
+    # Plot last 24 hours with calibrated data
     python magnetic_flux_3d_plotter.py --hours 24
+
+    # Create 2D polar plot
+    python magnetic_flux_3d_plotter.py --hours 6 --plots polar
 
     # Plot specific date range
     python magnetic_flux_3d_plotter.py --start "2025-10-03 10:00" --end "2025-10-03 18:00"
 
-    # Save plots to files
+    # Save calibrated plots to files
     python magnetic_flux_3d_plotter.py --save --output-dir plots/
 """
 
@@ -36,6 +46,7 @@ import matplotlib.dates as mdates
 from datetime import datetime, timedelta
 import os
 import sys
+import json
 
 # Add project directory to path for database import
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -50,10 +61,57 @@ except ImportError:
 class MagneticFlux3DPlotter:
     """3D visualization utility for magnetic flux data."""
 
-    def __init__(self, db_path="weather_data.db"):
-        """Initialize the plotter with database connection."""
+    def __init__(self, db_path="weather_data.db", calibration_file="weather_station_calibration.json"):
+        """Initialize the plotter with database connection and calibration."""
         self.db_path = db_path
         self.database = WeatherDatabase(db_path)
+        self.calibration_file = calibration_file
+
+        # Load calibration values
+        self.calibration_values = self.load_calibration_values()
+
+        print(f"Using magnetic flux calibration:")
+        print(f"  X scale: {self.calibration_values['magnetic_flux_x_scale']:.3e} T/LSb")
+        print(f"  Y scale: {self.calibration_values['magnetic_flux_y_scale']:.3e} T/LSb")
+        print(f"  Z scale: {self.calibration_values['magnetic_flux_z_scale']:.3e} T/LSb")
+
+    def load_calibration_values(self):
+        """Load calibration values from file or use defaults."""
+        # Default calibration values (NIST SP 330 - SI Units)
+        default_calibration_values = {
+            # HMC5883L Magnetic Flux Sensor (NIST SP 330 - Tesla SI unit)
+            'magnetic_flux_x_scale': 9.174e-8,      # Tesla per LSb (1/(1090 LSb/Gauss * 10000 Gauss/Tesla))
+            'magnetic_flux_y_scale': 9.174e-8,      # Tesla per LSb
+            'magnetic_flux_z_scale': 9.174e-8,      # Tesla per LSb
+            'magnetic_flux_x_offset': 0.0,          # Tesla offset
+            'magnetic_flux_y_offset': 0.0,          # Tesla offset
+            'magnetic_flux_z_offset': 0.0           # Tesla offset
+        }
+
+        try:
+            if os.path.exists(self.calibration_file):
+                with open(self.calibration_file, 'r') as f:
+                    data = json.load(f)
+
+                # Extract calibration values (handle both old and new format)
+                if 'calibration' in data:
+                    loaded_values = data['calibration']
+                else:
+                    loaded_values = data  # Old format compatibility
+
+                # Merge loaded values with defaults (in case new calibration parameters were added)
+                calibration_values = default_calibration_values.copy()
+                calibration_values.update(loaded_values)
+
+                print(f"Loaded calibration values from {self.calibration_file}")
+                return calibration_values
+            else:
+                print(f"No calibration file found, using defaults")
+                return default_calibration_values.copy()
+
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Error loading calibration file: {e}. Using defaults.")
+            return default_calibration_values.copy()
 
     def get_magnetic_flux_data(self, start_time, end_time):
         """Retrieve magnetic flux data for the specified time range."""
@@ -89,16 +147,25 @@ class MagneticFlux3DPlotter:
             timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
             times.append(timestamp)
 
-            # Store magnetic field components (assuming units are already in appropriate scale)
+            # Store raw magnetic field components (LSb values from HMC5883L)
             x_values.append(float(x))
             y_values.append(float(y))
             z_values.append(float(z))
 
         # Convert to numpy arrays
         times = np.array(times)
-        x_array = np.array(x_values)
-        y_array = np.array(y_values)
-        z_array = np.array(z_values)
+        x_raw = np.array(x_values)
+        y_raw = np.array(y_values)
+        z_raw = np.array(z_values)
+
+        # Apply calibration to convert raw LSb values to Tesla (NIST SP 330 SI units)
+        x_array = (x_raw * self.calibration_values['magnetic_flux_x_scale']) + self.calibration_values['magnetic_flux_x_offset']
+        y_array = (y_raw * self.calibration_values['magnetic_flux_y_scale']) + self.calibration_values['magnetic_flux_y_offset']
+        z_array = (z_raw * self.calibration_values['magnetic_flux_z_scale']) + self.calibration_values['magnetic_flux_z_offset']
+
+        print(f"Applied calibration to {len(x_array)} data points")
+        print(f"Raw range: X=[{x_raw.min():.0f}, {x_raw.max():.0f}] LSb")
+        print(f"Calibrated range: X=[{x_array.min():.2e}, {x_array.max():.2e}] Tesla")
 
         # Calculate derived quantities
         magnitude = np.sqrt(x_array**2 + y_array**2 + z_array**2)
@@ -125,6 +192,11 @@ class MagneticFlux3DPlotter:
         fig = plt.figure(figsize=(12, 8))
         ax = fig.add_subplot(111, projection='3d')
 
+        # Convert Tesla to microtesla for better readability (1 T = 1e6 μT)
+        x_microtesla = data['x'] * 1e6
+        y_microtesla = data['y'] * 1e6
+        z_microtesla = data['z'] * 1e6
+
         # Use time as the third dimension for vector positions
         time_numeric = mdates.date2num(data['times'])
         time_normalized = (time_numeric - time_numeric.min()) / (time_numeric.max() - time_numeric.min())
@@ -135,23 +207,23 @@ class MagneticFlux3DPlotter:
         indices = range(0, n_points, step)
 
         # Create 3D quiver plot - use simple quiver without color argument
-        quiver = ax.quiver(data['x'][indices],
-                          data['y'][indices],
-                          data['z'][indices],
-                          data['x'][indices],
-                          data['y'][indices],
-                          data['z'][indices],
+        quiver = ax.quiver(x_microtesla[indices],
+                          y_microtesla[indices],
+                          z_microtesla[indices],
+                          x_microtesla[indices],
+                          y_microtesla[indices],
+                          z_microtesla[indices],
                           length=0.1, normalize=True,
                           color='blue', alpha=0.6)
 
         # Add scatter plot with time coloring
-        scatter = ax.scatter(data['x'][indices], data['y'][indices], data['z'][indices],
+        scatter = ax.scatter(x_microtesla[indices], y_microtesla[indices], z_microtesla[indices],
                            c=time_normalized[indices], cmap='viridis', s=30, alpha=0.8)
 
         ax.set_xlabel('X Component (μT)')
         ax.set_ylabel('Y Component (μT)')
         ax.set_zlabel('Z Component (μT)')
-        ax.set_title(title)
+        ax.set_title(f"{title} (NIST SP 330 Calibrated)")
 
         # Add colorbar for time
         cbar = plt.colorbar(scatter, ax=ax, shrink=0.5, aspect=5)
@@ -163,15 +235,21 @@ class MagneticFlux3DPlotter:
         """Create magnitude vs time plot."""
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
 
+        # Convert Tesla to microtesla for better readability (1 T = 1e6 μT)
+        magnitude_microtesla = data['magnitude'] * 1e6
+        x_microtesla = data['x'] * 1e6
+        y_microtesla = data['y'] * 1e6
+        z_microtesla = data['z'] * 1e6
+
         # Magnitude plot
-        ax1.plot(data['times'], data['magnitude'], 'b-', linewidth=1, alpha=0.8)
+        ax1.plot(data['times'], magnitude_microtesla, 'b-', linewidth=1, alpha=0.8)
         ax1.set_ylabel('Magnitude (μT)')
-        ax1.set_title(title)
+        ax1.set_title(f"{title} (NIST SP 330 Calibrated)")
         ax1.grid(True, alpha=0.3)
 
         # Statistics
-        mean_mag = np.mean(data['magnitude'])
-        std_mag = np.std(data['magnitude'])
+        mean_mag = np.mean(magnitude_microtesla)
+        std_mag = np.std(magnitude_microtesla)
         ax1.axhline(mean_mag, color='r', linestyle='--', alpha=0.7,
                    label=f'Mean: {mean_mag:.2f} μT')
         ax1.fill_between(data['times'], mean_mag - std_mag, mean_mag + std_mag,
@@ -179,9 +257,9 @@ class MagneticFlux3DPlotter:
         ax1.legend()
 
         # Components plot
-        ax2.plot(data['times'], data['x'], 'r-', label='X Component', alpha=0.7)
-        ax2.plot(data['times'], data['y'], 'g-', label='Y Component', alpha=0.7)
-        ax2.plot(data['times'], data['z'], 'b-', label='Z Component', alpha=0.7)
+        ax2.plot(data['times'], x_microtesla, 'r-', label='X Component', alpha=0.7)
+        ax2.plot(data['times'], y_microtesla, 'g-', label='Y Component', alpha=0.7)
+        ax2.plot(data['times'], z_microtesla, 'b-', label='Z Component', alpha=0.7)
         ax2.set_xlabel('Time')
         ax2.set_ylabel('Component Value (μT)')
         ax2.set_title('Individual Components')
@@ -273,9 +351,13 @@ class MagneticFlux3DPlotter:
         # Create polar subplot
         ax_polar = fig.add_subplot(221, projection='polar')
 
+        # Convert Tesla to microtesla for better readability (1 T = 1e6 μT)
+        x_microtesla = data['x'] * 1e6
+        y_microtesla = data['y'] * 1e6
+
         # Calculate XY plane magnitude and angle
-        xy_magnitude = np.sqrt(data['x']**2 + data['y']**2)
-        xy_angle = np.arctan2(data['y'], data['x'])  # Angle in radians
+        xy_magnitude = np.sqrt(x_microtesla**2 + y_microtesla**2)
+        xy_angle = np.arctan2(y_microtesla, x_microtesla)  # Angle in radians
 
         # Create time-based coloring
         time_numeric = mdates.date2num(data['times'])
@@ -288,7 +370,7 @@ class MagneticFlux3DPlotter:
         # Add trajectory line
         ax_polar.plot(xy_angle, xy_magnitude, 'b-', alpha=0.3, linewidth=0.5)
 
-        ax_polar.set_title('XY Plane Polar View\n(Horizontal Magnetic Field)',
+        ax_polar.set_title('XY Plane Polar View\n(Horizontal Magnetic Field - NIST SP 330)',
                           fontsize=12, pad=20)
         ax_polar.set_xlabel('Magnitude (μT)')
         ax_polar.set_theta_zero_location('N')  # North at top

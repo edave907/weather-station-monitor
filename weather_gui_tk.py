@@ -33,6 +33,14 @@ class WeatherGUI:
         self.custom_start_time = None
         self.custom_end_time = None
 
+        # Chart data caching to improve performance
+        self.chart_cache = {
+            'last_range': None,
+            'weather_data': None,
+            'magnetic_flux_data': None,
+            'cache_time': None
+        }
+
         # Calibration file path
         self.calibration_file = "weather_station_calibration.json"
 
@@ -47,7 +55,14 @@ class WeatherGUI:
             'pressure_offset': 0.0,                 # Pressure: offset in Pa
             'irradiance_scale': 1.0,                # Irradiance: scale factor to W/m² (SI unit)
             'irradiance_offset': 0.0,               # Irradiance: offset in W/m²
-            'rain_gauge_mm_per_count': 0.2          # Rain gauge: mm per count (SI unit)
+            'rain_gauge_mm_per_count': 0.2,         # Rain gauge: mm per count (SI unit)
+            # HMC5883L Magnetic Flux Sensor (NIST SP 330 - Tesla SI unit)
+            'magnetic_flux_x_scale': 9.174e-8,      # Tesla per LSb (1/(1090 LSb/Gauss * 10000 Gauss/Tesla))
+            'magnetic_flux_y_scale': 9.174e-8,      # Tesla per LSb
+            'magnetic_flux_z_scale': 9.174e-8,      # Tesla per LSb
+            'magnetic_flux_x_offset': 0.0,          # Tesla offset
+            'magnetic_flux_y_offset': 0.0,          # Tesla offset
+            'magnetic_flux_z_offset': 0.0           # Tesla offset
         }
 
         # Load calibration values from file or use defaults
@@ -450,8 +465,8 @@ class WeatherGUI:
             self.chart_vars["Temperature"].set(True)
             self.selected_charts = ["Temperature"]
 
-        # Refresh charts with new selection
-        self.refresh_charts()
+        # Refresh charts with new selection using background thread
+        self.refresh_charts_background()
 
     def calculate_wind_speeds_from_deltas(self, data_dict, times):
         """Calculate wind speeds using delta between consecutive readings."""
@@ -533,8 +548,8 @@ class WeatherGUI:
         # Create calibration window
         cal_window = tk.Toplevel(self.root)
         cal_window.title("Sensor Calibration")
-        cal_window.geometry("500x700")
-        cal_window.resizable(False, False)
+        cal_window.geometry("700x800")
+        cal_window.resizable(True, True)
 
         # Make it modal
         cal_window.transient(self.root)
@@ -542,9 +557,9 @@ class WeatherGUI:
 
         # Center the window
         cal_window.update_idletasks()
-        x = (cal_window.winfo_screenwidth() // 2) - (500 // 2)
-        y = (cal_window.winfo_screenheight() // 2) - (700 // 2)
-        cal_window.geometry(f"500x700+{x}+{y}")
+        x = (cal_window.winfo_screenwidth() // 2) - (700 // 2)
+        y = (cal_window.winfo_screenheight() // 2) - (800 // 2)
+        cal_window.geometry(f"700x800+{x}+{y}")
 
         # Create scrollable frame
         canvas = tk.Canvas(cal_window)
@@ -589,6 +604,14 @@ class WeatherGUI:
         self.irradiance_scale_var = tk.StringVar(value=str(self.calibration_values['irradiance_scale']))
         self.irradiance_offset_var = tk.StringVar(value=str(self.calibration_values['irradiance_offset']))
         self.rain_gauge_var = tk.StringVar(value=str(self.calibration_values['rain_gauge_mm_per_count']))
+
+        # Magnetic flux calibration variables (HMC5883L)
+        self.magnetic_flux_x_scale_var = tk.StringVar(value=str(self.calibration_values['magnetic_flux_x_scale']))
+        self.magnetic_flux_y_scale_var = tk.StringVar(value=str(self.calibration_values['magnetic_flux_y_scale']))
+        self.magnetic_flux_z_scale_var = tk.StringVar(value=str(self.calibration_values['magnetic_flux_z_scale']))
+        self.magnetic_flux_x_offset_var = tk.StringVar(value=str(self.calibration_values['magnetic_flux_x_offset']))
+        self.magnetic_flux_y_offset_var = tk.StringVar(value=str(self.calibration_values['magnetic_flux_y_offset']))
+        self.magnetic_flux_z_offset_var = tk.StringVar(value=str(self.calibration_values['magnetic_flux_z_offset']))
         wind_speed_entry = ttk.Entry(wind_frame, textvariable=self.wind_speed_cal_var, width=15)
         wind_speed_entry.grid(row=0, column=1, padx=(10, 0), pady=5)
 
@@ -670,6 +693,51 @@ class WeatherGUI:
         ttk.Label(rain_frame, text="Each count represents this many millimeters of rain",
                  font=('Arial', 9), foreground='gray').grid(row=1, column=0, columnspan=2, pady=(5, 0), sticky=tk.W)
 
+        # Magnetic Flux Calibration Section (HMC5883L)
+        mag_frame = ttk.LabelFrame(main_frame, text="Magnetic Flux Sensor (HMC5883L) - Tesla SI Units", padding="10")
+        mag_frame.pack(fill=tk.X, pady=(0, 10))
+
+        # Create sub-frames for better organization
+        scale_frame = ttk.Frame(mag_frame)
+        scale_frame.pack(fill=tk.X, pady=(0, 5))
+
+        offset_frame = ttk.Frame(mag_frame)
+        offset_frame.pack(fill=tk.X, pady=(0, 5))
+
+        # Scale factors row
+        ttk.Label(scale_frame, text="Scale Factors (Tesla/LSb):", font=('Arial', 9, 'bold')).grid(row=0, column=0, columnspan=6, sticky=tk.W, pady=(0, 5))
+
+        ttk.Label(scale_frame, text="X:").grid(row=1, column=0, sticky=tk.W, pady=2)
+        mag_x_scale_entry = ttk.Entry(scale_frame, textvariable=self.magnetic_flux_x_scale_var, width=12)
+        mag_x_scale_entry.grid(row=1, column=1, padx=(5, 15), pady=2)
+
+        ttk.Label(scale_frame, text="Y:").grid(row=1, column=2, sticky=tk.W, pady=2)
+        mag_y_scale_entry = ttk.Entry(scale_frame, textvariable=self.magnetic_flux_y_scale_var, width=12)
+        mag_y_scale_entry.grid(row=1, column=3, padx=(5, 15), pady=2)
+
+        ttk.Label(scale_frame, text="Z:").grid(row=1, column=4, sticky=tk.W, pady=2)
+        mag_z_scale_entry = ttk.Entry(scale_frame, textvariable=self.magnetic_flux_z_scale_var, width=12)
+        mag_z_scale_entry.grid(row=1, column=5, padx=(5, 0), pady=2)
+
+        # Offset values row
+        ttk.Label(offset_frame, text="Offset Values (Tesla):", font=('Arial', 9, 'bold')).grid(row=0, column=0, columnspan=6, sticky=tk.W, pady=(0, 5))
+
+        ttk.Label(offset_frame, text="X:").grid(row=1, column=0, sticky=tk.W, pady=2)
+        mag_x_offset_entry = ttk.Entry(offset_frame, textvariable=self.magnetic_flux_x_offset_var, width=12)
+        mag_x_offset_entry.grid(row=1, column=1, padx=(5, 15), pady=2)
+
+        ttk.Label(offset_frame, text="Y:").grid(row=1, column=2, sticky=tk.W, pady=2)
+        mag_y_offset_entry = ttk.Entry(offset_frame, textvariable=self.magnetic_flux_y_offset_var, width=12)
+        mag_y_offset_entry.grid(row=1, column=3, padx=(5, 15), pady=2)
+
+        ttk.Label(offset_frame, text="Z:").grid(row=1, column=4, sticky=tk.W, pady=2)
+        mag_z_offset_entry = ttk.Entry(offset_frame, textvariable=self.magnetic_flux_z_offset_var, width=12)
+        mag_z_offset_entry.grid(row=1, column=5, padx=(5, 0), pady=2)
+
+        # Help text for magnetic flux
+        ttk.Label(mag_frame, text="HMC5883L Default: 9.174e-8 T/LSb (1/(1090 LSb/Gauss × 10000 Gauss/Tesla))",
+                 font=('Arial', 9), foreground='gray').pack(pady=(5, 0), anchor='w')
+
         # Buttons frame
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(20, 0))
@@ -721,6 +789,14 @@ class WeatherGUI:
                 messagebox.showerror("Invalid Value", "Rain gauge mm per count must be positive.")
                 return
 
+            # Magnetic flux calibration (HMC5883L)
+            mag_x_scale = float(self.magnetic_flux_x_scale_var.get())
+            mag_y_scale = float(self.magnetic_flux_y_scale_var.get())
+            mag_z_scale = float(self.magnetic_flux_z_scale_var.get())
+            mag_x_offset = float(self.magnetic_flux_x_offset_var.get())
+            mag_y_offset = float(self.magnetic_flux_y_offset_var.get())
+            mag_z_offset = float(self.magnetic_flux_z_offset_var.get())
+
             # Update all calibration values
             self.calibration_values.update({
                 'wind_speed_counts_per_ms': new_wind_cal,
@@ -732,7 +808,13 @@ class WeatherGUI:
                 'pressure_offset': pressure_offset,
                 'irradiance_scale': irradiance_scale,
                 'irradiance_offset': irradiance_offset,
-                'rain_gauge_mm_per_count': rain_gauge_cal
+                'rain_gauge_mm_per_count': rain_gauge_cal,
+                'magnetic_flux_x_scale': mag_x_scale,
+                'magnetic_flux_y_scale': mag_y_scale,
+                'magnetic_flux_z_scale': mag_z_scale,
+                'magnetic_flux_x_offset': mag_x_offset,
+                'magnetic_flux_y_offset': mag_y_offset,
+                'magnetic_flux_z_offset': mag_z_offset
             })
 
             # Save calibration values to file
@@ -763,20 +845,37 @@ class WeatherGUI:
             self.status_var.set("Refreshing...")
             self.root.update()
 
-            # Update current weather
+            # Update current weather (fast)
             self.update_current_weather()
 
-            # Update statistics
+            # Update statistics (fast)
             self.update_statistics()
 
-            # Update charts
-            self.refresh_charts()
-
-            self.status_var.set(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
+            # Update charts in background to prevent UI blocking
+            self.refresh_charts_background()
 
         except Exception as e:
             self.status_var.set(f"Error: {str(e)}")
             print(f"Error refreshing data: {e}")
+
+    def refresh_charts_background(self):
+        """Start chart refresh in background thread to prevent UI blocking."""
+        def background_refresh():
+            try:
+                self.root.after(0, lambda: self.status_var.set("Loading charts..."))
+
+                # Run chart refresh in background
+                self.refresh_charts()
+
+                # Update status on main thread
+                self.root.after(0, lambda: self.status_var.set(f"Last updated: {datetime.now().strftime('%H:%M:%S')}"))
+
+            except Exception as e:
+                self.root.after(0, lambda: self.status_var.set(f"Chart error: {str(e)}"))
+                print(f"Error in background chart refresh: {e}")
+
+        # Start background thread
+        threading.Thread(target=background_refresh, daemon=True).start()
 
     def update_current_weather(self):
         """Update current weather display."""
@@ -847,10 +946,55 @@ class WeatherGUI:
 
             # Get time range based on current settings
             start_time, end_time = self.get_chart_time_range()
+            current_range = (start_time, end_time)
 
-            # Get data for the time range
-            weather_data = self.database.get_weather_data_range(start_time, end_time)
-            magnetic_flux_data = self.database.get_magnetic_flux_data_range(start_time, end_time)
+            # Check cache to avoid unnecessary database queries
+            cache_valid = (
+                self.chart_cache['last_range'] == current_range and
+                self.chart_cache['cache_time'] and
+                (datetime.now() - self.chart_cache['cache_time']).total_seconds() < 30  # 30-second cache
+            )
+
+            if cache_valid and not self.use_custom_range:
+                # Use cached data for automatic refreshes
+                weather_data = self.chart_cache['weather_data']
+                magnetic_flux_data = self.chart_cache['magnetic_flux_data']
+                print("Using cached chart data")
+            else:
+                # Calculate intelligent sampling based on time range
+                time_span = end_time - start_time
+                max_points = 2000  # Maximum data points for chart performance
+                sample_interval = 1
+                data_limit = None
+
+                # Estimate data points based on 5-second intervals (typical MQTT rate)
+                estimated_points = int(time_span.total_seconds() / 5)
+
+                if estimated_points > max_points:
+                    # Use sampling to reduce data points
+                    sample_interval = max(1, estimated_points // max_points)
+                    print(f"Large dataset detected ({estimated_points} points), using sample interval: {sample_interval}")
+                elif estimated_points > max_points * 2:
+                    # For very large datasets, use both sampling and limits
+                    sample_interval = max(1, estimated_points // max_points)
+                    data_limit = max_points
+                    print(f"Very large dataset detected, using sample interval: {sample_interval} and limit: {data_limit}")
+
+                # Get data for the time range with optimizations
+                weather_data = self.database.get_weather_data_range(start_time, end_time,
+                                                                  limit=data_limit,
+                                                                  sample_interval=sample_interval)
+                magnetic_flux_data = self.database.get_magnetic_flux_data_range(start_time, end_time,
+                                                                               limit=data_limit,
+                                                                               sample_interval=sample_interval)
+
+                # Update cache
+                self.chart_cache.update({
+                    'last_range': current_range,
+                    'weather_data': weather_data,
+                    'magnetic_flux_data': magnetic_flux_data,
+                    'cache_time': datetime.now()
+                })
 
             if weather_data:
                 # Parse data
@@ -972,9 +1116,15 @@ class WeatherGUI:
                 ax.text(0.5, 0.5, 'No data available for selected time range',
                        ha='center', va='center', transform=ax.transAxes)
 
-            # Adjust layout and redraw
-            self.fig.tight_layout()
-            self.canvas.draw()
+            # Adjust layout and redraw (ensure this runs on main thread)
+            def update_ui():
+                self.fig.tight_layout()
+                self.canvas.draw()
+
+            if threading.current_thread() == threading.main_thread():
+                update_ui()
+            else:
+                self.root.after(0, update_ui)
 
         except Exception as e:
             print(f"Error refreshing charts: {e}")

@@ -99,17 +99,42 @@ class WeatherDatabase:
             """, (limit,))
             return cursor.fetchall()
 
-    def get_weather_data_range(self, start_time: datetime, end_time: datetime) -> List[Tuple]:
-        """Get weather data within a specific time range."""
+    def get_weather_data_range(self, start_time: datetime, end_time: datetime, limit: int = None, sample_interval: int = None) -> List[Tuple]:
+        """Get weather data within a specific time range with optional limits and sampling."""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute("""
-                SELECT timestamp, temperature, humidity, pressure, irradiance,
-                       wind_direction, rain_gauge_count, anemometer_count, created_at
-                FROM weather_data
-                WHERE created_at BETWEEN ? AND ?
-                ORDER BY created_at ASC
-            """, (start_time, end_time))
+
+            # Build query with optional sampling
+            if sample_interval and sample_interval > 1:
+                # Use row sampling to reduce data points for large ranges
+                query = """
+                    SELECT timestamp, temperature, humidity, pressure, irradiance,
+                           wind_direction, rain_gauge_count, anemometer_count, created_at
+                    FROM (
+                        SELECT *, ROW_NUMBER() OVER (ORDER BY created_at) as rn
+                        FROM weather_data
+                        WHERE created_at BETWEEN ? AND ?
+                    )
+                    WHERE rn % ? = 1
+                    ORDER BY created_at ASC
+                """
+                params = (start_time, end_time, sample_interval)
+            else:
+                query = """
+                    SELECT timestamp, temperature, humidity, pressure, irradiance,
+                           wind_direction, rain_gauge_count, anemometer_count, created_at
+                    FROM weather_data
+                    WHERE created_at BETWEEN ? AND ?
+                    ORDER BY created_at ASC
+                """
+                params = (start_time, end_time)
+
+            # Add limit if specified
+            if limit:
+                query += " LIMIT ?"
+                params = params + (limit,)
+
+            cursor.execute(query, params)
             return cursor.fetchall()
 
     def get_latest_magnetic_flux_data(self, limit: int = 100) -> List[Tuple]:
@@ -124,16 +149,40 @@ class WeatherDatabase:
             """, (limit,))
             return cursor.fetchall()
 
-    def get_magnetic_flux_data_range(self, start_time: datetime, end_time: datetime) -> List[Tuple]:
-        """Get magnetic flux data within a specific time range."""
+    def get_magnetic_flux_data_range(self, start_time: datetime, end_time: datetime, limit: int = None, sample_interval: int = None) -> List[Tuple]:
+        """Get magnetic flux data within a specific time range with optional limits and sampling."""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute("""
-                SELECT x, y, z, created_at
-                FROM magnetic_flux_data
-                WHERE created_at BETWEEN ? AND ?
-                ORDER BY created_at ASC
-            """, (start_time, end_time))
+
+            # Build query with optional sampling
+            if sample_interval and sample_interval > 1:
+                # Use row sampling to reduce data points for large ranges
+                query = """
+                    SELECT x, y, z, created_at
+                    FROM (
+                        SELECT *, ROW_NUMBER() OVER (ORDER BY created_at) as rn
+                        FROM magnetic_flux_data
+                        WHERE created_at BETWEEN ? AND ?
+                    )
+                    WHERE rn % ? = 1
+                    ORDER BY created_at ASC
+                """
+                params = (start_time, end_time, sample_interval)
+            else:
+                query = """
+                    SELECT x, y, z, created_at
+                    FROM magnetic_flux_data
+                    WHERE created_at BETWEEN ? AND ?
+                    ORDER BY created_at ASC
+                """
+                params = (start_time, end_time)
+
+            # Add limit if specified
+            if limit:
+                query += " LIMIT ?"
+                params = params + (limit,)
+
+            cursor.execute(query, params)
             return cursor.fetchall()
 
     def get_current_weather_summary(self) -> Optional[Dict]:
