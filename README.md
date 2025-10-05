@@ -1,8 +1,9 @@
-This project is very experimental, incomplete, and doesn't work correctly a lot of the time.  caveat emptor!
+1. This project is very experimental, incomplete, and doesn't work correctly a lot of the time.  caveat emptor!
+2. the GTK GUI probably will not work for you.  Use the TKinter GUI instead.
 
 # Weather Station Monitor
 
-A Python application that subscribes to MQTT weather data, stores it in a SQLite database, and displays real-time data using either GTK GUI or console interface.
+A Python application that subscribes to MQTT weather data, stores it in a SQLite database, and displays real-time data using either Tkinter GUI or console interface.
 
 ## Features
 
@@ -66,6 +67,8 @@ python weather_gui_tk.py --db /path/to/weather.db
 - Completely decoupled from backend
 
 ### Option 2: GTK GUI (Advanced)
+
+Note: The Development of the GTK GUI components are paused and untested for now pending my fixing the GTK package on my system.  
 
 For GTK interface with system Python:
 
