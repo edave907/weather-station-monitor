@@ -1,0 +1,20 @@
+{
+  "version": "2.0",
+  "created": "2025-10-06T00:38:06.365800",
+  "description": "Coordinate transformation calibration using CMO reference",
+  "reference_observatory": "CMO",
+  "calibration_values": {
+    "magnetic_flux_x_scale": 5.119362344461532e-08,
+    "magnetic_flux_y_scale": 5.468460042213421e-09,
+    "magnetic_flux_z_scale": 3.285602009007802e-08,
+    "magnetic_flux_x_offset": 5.254899604336113e-09,
+    "magnetic_flux_y_offset": -4.11262082740767e-09,
+    "magnetic_flux_z_offset": -9.87942500592625e-09
+  },
+  "coordinate_transformation": {
+    "rotation_x_degrees": -135.08266505066095,
+    "rotation_y_degrees": -92.26458290202144,
+    "rotation_z_degrees": 176.16412749338252,
+    "rms_error_nt": 478.799560706809
+  }
+}

@@ -1,0 +1,42 @@
+> What is the closest USGS Geomagnetic Observatory to Palmer Alaska?
+
+● Web Search("USGS geomagnetic observatory Alaska locations closest to Palmer Alaska coordinates")
+  ⎿  Did 5 searches in 43s                                                                                                  
+
+● Based on my research, the closest USGS Geomagnetic Observatory to Palmer, Alaska is:
+
+  College Observatory (CMO) - Fairbanks
+
+  Coordinates: 64°51.4'N, 147°50.2'WDistance from Palmer: ~240 miles northeastElevation: 200 meters
+
+  Distance Comparison:
+
+  | Observatory     | Location         | Distance from Palmer |
+  |-----------------|------------------|----------------------|
+  | College (CMO)   | Fairbanks        | ~240 miles (closest) |
+  | Sitka (SIT)     | Southeast Alaska | ~350 miles           |
+  | Deadhorse (DED) | Prudhoe Bay      | ~500+ miles          |
+
+  For Your USGS Comparison:
+
+  You should use observatory code CMO (College) for the most geographically relevant comparison:
+
+  # Import data from closest observatory
+  python usgs_magnetic_importer.py --observatory CMO --hours 24
+
+  # Compare with local data  
+  python magnetic_flux_comparison_plotter.py --observatory CMO --hours 12 --plots all
+
+  Why College Observatory:
+
+  - Closest geographically to Palmer
+  - Similar latitude (both in south-central Alaska region)
+  - Active USGS station with real-time data
+  - Established research facility (operational since 1901, current site since 1940)
+
+  The College Observatory is operated by the University of Alaska Fairbanks Geophysical Institute in partnership with USGS,
+  making it an excellent reference point for validating your Palmer-area magnetic field measurements.
+
+  This should give you much more relevant comparison data than Boulder, Colorado (BOU) which is over 2000 miles away!
+
+

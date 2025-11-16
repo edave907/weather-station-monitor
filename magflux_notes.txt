@@ -1,0 +1,60 @@
+● Perfect! I've created a comprehensive USGS magnetic data import utility that integrates seamlessly with your weather
+  station database. Here's what I've delivered:
+
+  🎯 USGS Magnetic Data Import Utility
+
+  Core Files Created:
+
+  1. usgs_magnetic_importer.py - Main import utility
+    - Fetches real-time data from USGS geomagnetic observatories
+    - Converts nanotesla to Tesla for NIST SP 330 compliance
+    - Stores data in format compatible with your 3D plotter
+    - Supports all 14 USGS observatories (BOU, FRD, TUC, etc.)
+  2. magnetic_flux_comparison_plotter.py - Advanced comparison tool
+    - Side-by-side plots of local vs USGS data
+    - Statistical analysis and correlation plots
+    - Difference analysis for calibration validation
+    - Time-aligned data comparison
+  3. examples_usgs_comparison.sh - Demo script with usage examples
+
+  Key Features:
+
+  ✅ Observatory Selection - Choose from 14 USGS observatories based on your location
+  ✅ Time Range Import - Flexible date ranges (hours, days, or specific periods)
+  ✅ Data Format Compatibility - Stores data in same X,Y,Z structure as your local sensors
+  ✅ Unit Conversion - Automatic nT → Tesla conversion for NIST SP 330 compliance
+  ✅ Performance Optimized - Intelligent sampling and chunked downloads
+  ✅ Statistical Analysis - Correlation coefficients, RMS differences, validation metrics
+
+  Usage Examples:
+
+  # List available observatories
+  python usgs_magnetic_importer.py --list-observatories
+
+  # Import 24 hours from Boulder, Colorado (recommended for western US)
+  python usgs_magnetic_importer.py --observatory BOU --hours 24
+
+  # Compare local data with USGS reference
+  python magnetic_flux_comparison_plotter.py --observatory BOU --hours 12 --plots all
+
+  # Create detailed validation plots
+  python magnetic_flux_comparison_plotter.py --observatory FRD --hours 6 --save --output-dir validation/
+
+  Database Integration:
+
+  The utility creates a new usgs_magnetic_data table with the same X,Y,Z structure as your existing magnetic_flux_data table,
+   enabling direct comparison in your 3D plotting tools.
+
+  Observatory Recommendations:
+
+  - Colorado/Rocky Mountains: BOU (Boulder)
+  - Southwest/Arizona: TUC (Tucson)
+  - East Coast: FRD (Fredericksburg)
+  - Alaska: BRW (Barrow)
+  - Hawaii: HON (Honolulu)
+  - Caribbean: SJG (San Juan)
+
+  This gives you professional-grade reference data to validate your HMC5883L sensor calibration and identify local magnetic
+  anomalies! The comparison plots will show correlation coefficients and statistical differences between your local
+  measurements and the USGS professional observatories.
+

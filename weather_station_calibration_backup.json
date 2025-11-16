@@ -1,0 +1,25 @@
+{
+    "metadata": {
+        "version": "1.0",
+        "created": "2025-10-04T23:07:10.617649",
+        "description": "Weather Station Sensor Calibration (NIST SP 330 - SI Units)"
+    },
+    "calibration": {
+        "wind_speed_counts_per_ms": 1.5,
+        "temperature_offset_k": 273.15,
+        "temperature_scale": 1.0,
+        "humidity_scale": 1.0,
+        "humidity_offset": 0.0,
+        "pressure_scale": 1.0,
+        "pressure_offset": 0.0,
+        "irradiance_scale": 1.0,
+        "irradiance_offset": 0.0,
+        "rain_gauge_mm_per_count": 0.2794,
+        "magnetic_flux_x_scale": 9.174e-08,
+        "magnetic_flux_y_scale": 9.174e-08,
+        "magnetic_flux_z_scale": 9.174e-08,
+        "magnetic_flux_x_offset": 0.0,
+        "magnetic_flux_y_offset": 0.0,
+        "magnetic_flux_z_offset": 0.0
+    }
+}

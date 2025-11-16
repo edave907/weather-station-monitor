@@ -445,14 +445,14 @@ class MagneticFlux3DPlotter:
         print(f"Number of samples: {len(data['times'])}")
 
         print(f"\nMagnetic Field Components (μT):")
-        print(f"  X: {np.mean(data['x']):.2f} ± {np.std(data['x']):.2f} (range: {np.min(data['x']):.2f} to {np.max(data['x']):.2f})")
-        print(f"  Y: {np.mean(data['y']):.2f} ± {np.std(data['y']):.2f} (range: {np.min(data['y']):.2f} to {np.max(data['y']):.2f})")
-        print(f"  Z: {np.mean(data['z']):.2f} ± {np.std(data['z']):.2f} (range: {np.min(data['z']):.2f} to {np.max(data['z']):.2f})")
+        print(f"  X: {np.mean(data['x'])*1e6:.2f} ± {np.std(data['x'])*1e6:.2f} (range: {np.min(data['x'])*1e6:.2f} to {np.max(data['x'])*1e6:.2f})")
+        print(f"  Y: {np.mean(data['y'])*1e6:.2f} ± {np.std(data['y'])*1e6:.2f} (range: {np.min(data['y'])*1e6:.2f} to {np.max(data['y'])*1e6:.2f})")
+        print(f"  Z: {np.mean(data['z'])*1e6:.2f} ± {np.std(data['z'])*1e6:.2f} (range: {np.min(data['z'])*1e6:.2f} to {np.max(data['z'])*1e6:.2f})")
 
         print(f"\nMagnetic Field Magnitude:")
-        print(f"  Mean: {np.mean(data['magnitude']):.2f} μT")
-        print(f"  Std Dev: {np.std(data['magnitude']):.2f} μT")
-        print(f"  Range: {np.min(data['magnitude']):.2f} to {np.max(data['magnitude']):.2f} μT")
+        print(f"  Mean: {np.mean(data['magnitude'])*1e6:.2f} μT")
+        print(f"  Std Dev: {np.std(data['magnitude'])*1e6:.2f} μT")
+        print(f"  Range: {np.min(data['magnitude'])*1e6:.2f} to {np.max(data['magnitude'])*1e6:.2f} μT")
 
         print(f"\nMagnetic Field Direction:")
         print(f"  Declination: {np.mean(data['declination']):.1f}° ± {np.std(data['declination']):.1f}°")
@@ -462,7 +462,7 @@ class MagneticFlux3DPlotter:
         earth_field_typical = 50  # μT (typical Earth's field strength)
         print(f"\nEarth's Magnetic Field Context:")
         print(f"  Typical Earth field: ~{earth_field_typical} μT")
-        print(f"  Measured field ratio: {np.mean(data['magnitude'])/earth_field_typical:.2f}x typical")
+        print(f"  Measured field ratio: {np.mean(data['magnitude'])*1e6/earth_field_typical:.2f}x typical")
 
 
 def parse_arguments():
