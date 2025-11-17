@@ -14,7 +14,10 @@ Arguments:
     --console     Force console mode even if GTK is available
     --host HOST   MQTT broker hostname (default: localhost)
     --port PORT   MQTT broker port (default: 1883)
-    --db DATABASE Database file path (default: weather_data.db)
+    --db DATABASE Database file path (default: /deepsink1/weatherstation/data/weather_data.db)
+
+NOTE: Daemon mode is DISABLED in development version.
+      Production daemon runs via systemd service.
 """
 
 import argparse
@@ -25,17 +28,17 @@ from weather_daemon import WeatherDaemon
 
 def main():
     """Main application entry point."""
-    parser = argparse.ArgumentParser(description="Weather Station Monitor")
+    parser = argparse.ArgumentParser(description="Weather Station Monitor (Development)")
     parser.add_argument("--console", action="store_true",
                         help="Force console mode even if GTK is available")
     parser.add_argument("--daemon", action="store_true",
-                        help="Run in daemon mode (background, no display)")
+                        help="DISABLED: Daemon mode runs via systemd service only")
     parser.add_argument("--host", default="localhost",
                         help="MQTT broker hostname (default: localhost)")
     parser.add_argument("--port", type=int, default=1883,
                         help="MQTT broker port (default: 1883)")
-    parser.add_argument("--db", default="weather_data.db",
-                        help="Database file path (default: weather_data.db)")
+    parser.add_argument("--db", default="/deepsink1/weatherstation/data/weather_data.db",
+                        help="Database file path (default: /deepsink1/weatherstation/data/weather_data.db)")
     parser.add_argument("--log", default="weather_daemon.log",
                         help="Log file path for daemon mode (default: weather_daemon.log)")
     parser.add_argument("--pid", default="weather_daemon.pid",
@@ -47,33 +50,21 @@ def main():
 
     args = parser.parse_args()
 
-    # Handle daemon mode first
+    # Daemon mode disabled in development version
     if args.daemon:
-        import logging
-        if args.verbose:
-            logging.getLogger().setLevel(logging.DEBUG)
-
-        if not args.silent:
-            print("Weather Station Monitor - Daemon Mode")
-            print("====================================")
-            print(f"MQTT Broker: {args.host}:{args.port}")
-            print(f"Database: {args.db}")
-            print(f"Log file: {args.log}")
-            if args.silent:
-                print("Silent mode - check log file for activity")
-            else:
-                print("Starting daemon mode (press Ctrl+C to stop)...")
-
-        daemon = WeatherDaemon(args.host, args.port, args.db, args.log, args.silent, args.pid)
-        try:
-            daemon.start()
-        except KeyboardInterrupt:
-            print("\nDaemon interrupted by user")
-            sys.exit(0)
-        except Exception as e:
-            print(f"Daemon error: {e}")
-            sys.exit(1)
-        return
+        print("\n" + "="*70)
+        print("ERROR: Daemon mode is DISABLED in development version")
+        print("="*70)
+        print("\nThe weather station daemon runs as a systemd service in production.")
+        print("\nTo manage the production daemon:")
+        print("  sudo systemctl status weather-daemon   # Check status")
+        print("  sudo systemctl restart weather-daemon  # Restart service")
+        print("  sudo systemctl stop weather-daemon     # Stop service")
+        print("\nTo view production logs:")
+        print("  sudo journalctl -u weather-daemon -f")
+        print("  tail -f /opt/weatherstation/logs/weather_daemon.log")
+        print("\n" + "="*70)
+        sys.exit(1)
 
     # Regular GUI/console modes
     print("Weather Station Monitor")

@@ -45,7 +45,7 @@ import sys
 class MagneticFluxComparisonPlotter:
     """Compares local magnetic flux data with USGS observatory reference data."""
 
-    def __init__(self, db_path: str = "weather_data.db"):
+    def __init__(self, db_path: str = "/deepsink1/weatherstation/data/weather_data.db"):
         self.db_path = db_path
         self.calibration_values = self.load_calibration()
 
@@ -481,7 +481,7 @@ def main():
     parser.add_argument('--end', help='End time (YYYY-MM-DD or "YYYY-MM-DD HH:MM")')
     parser.add_argument('--hours', type=int, help='Hours of recent data to compare')
     parser.add_argument('--days', type=int, help='Days of recent data to compare')
-    parser.add_argument('--db', default='weather_data.db', help='Database path')
+    parser.add_argument('--db', default='/deepsink1/weatherstation/data/weather_data.db', help='Database path')
     parser.add_argument('--plots', choices=['comparison', 'difference', 'correlation', 'all'],
                         default='comparison', help='Plot types to generate')
     parser.add_argument('--save', action='store_true', help='Save plots to files')

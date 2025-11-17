@@ -14,7 +14,7 @@ from database import WeatherDatabase
 class WeatherMQTTSubscriber:
     """MQTT subscriber for weather station data."""
 
-    def __init__(self, host: str = "localhost", port: int = 1883, db_path: str = "weather_data.db"):
+    def __init__(self, host: str = "localhost", port: int = 1883, db_path: str = "/deepsink1/weatherstation/data/weather_data.db"):
         self.host = host
         self.port = port
         self.client = mqtt.Client()

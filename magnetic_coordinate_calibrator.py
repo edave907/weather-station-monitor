@@ -32,7 +32,7 @@ import os
 class MagneticCoordinateCalibrator:
     """Calibrates sensor orientation and scale using USGS reference data."""
 
-    def __init__(self, db_path="weather_data.db"):
+    def __init__(self, db_path="/deepsink1/weatherstation/data/weather_data.db"):
         self.db_path = db_path
         self.best_transformation = None
         self.calibration_results = None
@@ -460,7 +460,7 @@ def main():
     parser = argparse.ArgumentParser(description='Optimize sensor coordinate transformation using USGS reference data')
     parser.add_argument('--observatory', '-o', default='CMO', help='USGS observatory code for reference')
     parser.add_argument('--hours', type=int, default=8, help='Hours of data to use for calibration')
-    parser.add_argument('--db', default='weather_data.db', help='Database path')
+    parser.add_argument('--db', default='/deepsink1/weatherstation/data/weather_data.db', help='Database path')
     parser.add_argument('--save-plots', action='store_true', help='Save calibration plots')
     parser.add_argument('--save-calibration', action='store_true', help='Save optimized calibration to file')
 

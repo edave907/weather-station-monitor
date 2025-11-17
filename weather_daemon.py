@@ -19,7 +19,7 @@ from mqtt_subscriber import WeatherMQTTSubscriber
 class WeatherDaemon:
     """Daemon for background weather data collection."""
 
-    def __init__(self, host: str = "localhost", port: int = 1883, db_path: str = "weather_data.db",
+    def __init__(self, host: str = "localhost", port: int = 1883, db_path: str = "/deepsink1/weatherstation/data/weather_data.db",
                  log_file: str = "weather_daemon.log", silent: bool = False, pid_file: str = "weather_daemon.pid"):
         self.host = host
         self.port = port
@@ -222,8 +222,8 @@ def main():
                         help="MQTT broker hostname (default: localhost)")
     parser.add_argument("--port", type=int, default=1883,
                         help="MQTT broker port (default: 1883)")
-    parser.add_argument("--db", default="weather_data.db",
-                        help="Database file path (default: weather_data.db)")
+    parser.add_argument("--db", default="/deepsink1/weatherstation/data/weather_data.db",
+                        help="Database file path (default: /deepsink1/weatherstation/data/weather_data.db)")
     parser.add_argument("--log", default="weather_daemon.log",
                         help="Log file path (default: weather_daemon.log)")
     parser.add_argument("--pid", default="weather_daemon.pid",

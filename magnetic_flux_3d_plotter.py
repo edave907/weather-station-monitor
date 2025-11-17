@@ -479,8 +479,8 @@ Examples:
         """
     )
 
-    parser.add_argument('--db', default='weather_data.db',
-                       help='Database file path (default: weather_data.db)')
+    parser.add_argument('--db', default='/deepsink1/weatherstation/data/weather_data.db',
+                       help='Database file path (default: /deepsink1/weatherstation/data/weather_data.db)')
 
     # Time range options
     time_group = parser.add_mutually_exclusive_group()

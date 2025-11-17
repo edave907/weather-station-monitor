@@ -22,8 +22,8 @@ try:
     import argparse
 
     parser = argparse.ArgumentParser(description="Weather Station Tkinter GUI")
-    parser.add_argument("--db", default="weather_data.db",
-                        help="Database file path (default: weather_data.db)")
+    parser.add_argument("--db", default="/deepsink1/weatherstation/data/weather_data.db",
+                        help="Database file path (default: /deepsink1/weatherstation/data/weather_data.db)")
 
     args = parser.parse_args()
 

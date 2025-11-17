@@ -61,7 +61,7 @@ class USGSMagneticImporter:
         'TUC': {'name': 'Tucson', 'state': 'Arizona', 'country': 'USA'}
     }
 
-    def __init__(self, db_path: str = "weather_data.db"):
+    def __init__(self, db_path: str = "/deepsink1/weatherstation/data/weather_data.db"):
         self.db_path = db_path
         self.base_url = "https://geomag.usgs.gov/ws/data/"
         self.init_database()
@@ -325,7 +325,7 @@ def main():
     parser.add_argument('--end', help='End time (YYYY-MM-DD or "YYYY-MM-DD HH:MM")')
     parser.add_argument('--hours', type=int, help='Hours of recent data to import')
     parser.add_argument('--days', type=int, help='Days of recent data to import')
-    parser.add_argument('--db', default='weather_data.db', help='Database path')
+    parser.add_argument('--db', default='/deepsink1/weatherstation/data/weather_data.db', help='Database path')
     parser.add_argument('--list-observatories', action='store_true', help='List available observatories')
     parser.add_argument('--summary', action='store_true', help='Show data summary')
     parser.add_argument('--chunk-hours', type=int, default=24, help='Hours per API request chunk')

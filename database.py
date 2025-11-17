@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Tuple
 class WeatherDatabase:
     """Handles weather station data storage and retrieval."""
 
-    def __init__(self, db_path: str = "weather_data.db"):
+    def __init__(self, db_path: str = "/deepsink1/weatherstation/data/weather_data.db"):
         self.db_path = db_path
         self.init_database()
 
