@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import matplotlib.dates as mdates
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import threading
 import time
 import json
@@ -435,13 +435,19 @@ class WeatherGUI:
         return range_map.get(self.time_range_var.get(), timedelta(hours=1))
 
     def get_chart_time_range(self):
-        """Get the time range for charts based on current settings."""
+        """Get the time range for charts based on current settings.
+
+        Returns UTC times for database queries (created_at is stored in UTC).
+        """
         if self.use_custom_range and self.custom_start_time and self.custom_end_time:
-            return self.custom_start_time, self.custom_end_time
+            # Custom times are entered as local - convert to UTC for DB query
+            start_utc = self.custom_start_time.astimezone(timezone.utc).replace(tzinfo=None)
+            end_utc = self.custom_end_time.astimezone(timezone.utc).replace(tzinfo=None)
+            return start_utc, end_utc
         else:
-            # Use quick range
+            # Use quick range - calculate in UTC for DB query
             time_delta = self.get_time_range_delta()
-            end_time = datetime.now()
+            end_time = datetime.now(timezone.utc).replace(tzinfo=None)
             start_time = end_time - time_delta
             return start_time, end_time
 
@@ -513,8 +519,10 @@ class WeatherGUI:
         flux_by_time = {}
         for flux_row in magnetic_flux_data:
             # flux_row: (x, y, z, created_at)
+            # created_at is UTC from SQLite - convert to local time
             timestamp_str = flux_row[3]
-            timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+            utc_time = datetime.fromisoformat(timestamp_str).replace(tzinfo=timezone.utc)
+            timestamp = utc_time.astimezone().replace(tzinfo=None)
             flux_by_time[timestamp] = {
                 'x': flux_row[0],
                 'y': flux_row[1],
@@ -891,10 +899,11 @@ class WeatherGUI:
                 self.weather_vars["anemometer"].set(str(summary.get('anemometer_count', '--')))
 
                 if summary.get('last_updated'):
-                    # Parse the timestamp and format it
+                    # Parse the timestamp (UTC) and convert to local time
                     try:
-                        timestamp = datetime.fromisoformat(summary['last_updated'].replace('Z', '+00:00'))
-                        formatted_time = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                        utc_time = datetime.fromisoformat(summary['last_updated']).replace(tzinfo=timezone.utc)
+                        local_time = utc_time.astimezone().replace(tzinfo=None)
+                        formatted_time = local_time.strftime('%Y-%m-%d %H:%M:%S')
                         self.weather_vars["last_updated"].set(formatted_time)
                     except:
                         self.weather_vars["last_updated"].set(summary['last_updated'])
@@ -1015,9 +1024,8 @@ class WeatherGUI:
 
                 for row in weather_data:
                     try:
-                        # Parse timestamp from the created_at field (index 8)
-                        timestamp_str = row[8]
-                        timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                        # Convert Unix timestamp (UTC) to local time
+                        timestamp = datetime.fromtimestamp(row[0])
                         times.append(timestamp)
 
                         # Extract all data fields

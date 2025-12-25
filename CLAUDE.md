@@ -94,6 +94,42 @@ Weather sensor data includes:
 Magnetic flux sensor data includes:
 - `x`, `y`, `z`: Magnetic field coordinates (HMC5883L raw LSb values)
 
+## Database Timezone Conventions
+
+**All times in the database are stored in UTC.**
+
+| Column | Format | Description |
+|--------|--------|-------------|
+| `timestamp` | Unix epoch (integer) | Sensor UTC time - preferred for queries |
+| `created_at` | ISO datetime string | SQLite CURRENT_TIMESTAMP (UTC, no TZ marker) |
+
+### Guidelines
+
+1. **Storage:** Always store times in UTC
+2. **Queries:** Use UTC times when querying `created_at` or comparing `timestamp`
+3. **Display:** Convert to local time only at the presentation layer
+4. **Prefer Unix timestamps:** They are unambiguous; use `datetime.fromtimestamp()` for auto-conversion to local
+
+### Code Patterns
+
+```python
+from datetime import datetime, timezone
+
+# Query with UTC times
+end_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+start_utc = end_utc - timedelta(hours=1)
+# Use start_utc, end_utc in WHERE created_at BETWEEN ? AND ?
+
+# Display: Unix timestamp to local time
+local_time = datetime.fromtimestamp(row[0])  # Automatic UTC->local
+
+# Display: created_at (UTC string) to local time
+utc_time = datetime.fromisoformat(created_at_str).replace(tzinfo=timezone.utc)
+local_time = utc_time.astimezone().replace(tzinfo=None)
+```
+
+See `TIMEZONE_BUG_LESSONS_LEARNED.md` for detailed analysis of timezone handling issues.
+
 ## Recent Enhancements (Latest Session)
 
 ### NIST SP 330 Compliance & HMC5883L Calibration
