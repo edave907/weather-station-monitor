@@ -1,0 +1,79 @@
+{
+  "version": "1.0",
+  "created": "2025-10-06",
+  "description": "Virtual Geomagnetic Observatory Configuration for Palmer, Alaska",
+
+  "target_location": {
+    "latitude": 61.5994,
+    "longitude": -149.115,
+    "elevation": 70,
+    "name": "Palmer, Alaska",
+    "magnetic_declination": -17.5,
+    "comments": "Palmer area coordinates, declination approximate"
+  },
+
+  "interpolation": {
+    "method": "idw",
+    "update_interval_minutes": 5,
+    "max_data_age_hours": 2,
+    "uncertainty_threshold": 0.1,
+    "idw_power": 2.0,
+    "gp_kernel_length_scale": 100.0,
+    "ensemble_weights": {
+      "idw": 0.3,
+      "gp": 0.7
+    }
+  },
+
+  "validation": {
+    "local_sensor_available": true,
+    "validation_interval_hours": 1,
+    "alert_threshold_percent": 20,
+    "validation_window_minutes": 30,
+    "enable_alerts": true
+  },
+
+  "data_quality": {
+    "min_observatories": 3,
+    "max_missing_data_percent": 25,
+    "temporal_consistency_check": true,
+    "outlier_detection": true,
+    "outlier_threshold_sigma": 3.0
+  },
+
+  "observatory_network": {
+    "preferred_observatories": ["CMO", "SIT", "SHU", "DED"],
+    "fallback_observatories": ["BRW", "BOU", "NEW"],
+    "max_distance_km": 2000,
+    "weight_by_distance": true
+  },
+
+  "prediction_storage": {
+    "keep_history_hours": 24,
+    "auto_save_interval_hours": 6,
+    "save_format": "json",
+    "compress_old_data": true
+  },
+
+  "alerts": {
+    "large_field_change_threshold_nt": 1000,
+    "rapid_change_threshold_nt_per_minute": 50,
+    "validation_failure_threshold": 3,
+    "data_outage_threshold_minutes": 30
+  },
+
+  "performance": {
+    "enable_caching": true,
+    "cache_duration_minutes": 10,
+    "parallel_processing": false,
+    "max_memory_mb": 100
+  },
+
+  "logging": {
+    "level": "INFO",
+    "log_predictions": true,
+    "log_validations": true,
+    "log_file": "virtual_observatory.log",
+    "rotate_logs": true
+  }
+}

@@ -1,0 +1,42 @@
+[Unit]
+Description=Weather Station Data Collector Daemon
+Documentation=file:///opt/weatherstation/README.md
+After=network.target mosquitto.service
+Wants=mosquitto.service
+
+[Service]
+Type=simple
+User=david
+Group=david
+WorkingDirectory=/opt/weatherstation/src
+Environment="PATH=/opt/weatherstation/venv/bin:/usr/local/bin:/usr/bin"
+Environment="PYTHONPATH=/opt/weatherstation/venv/lib/python3.12/site-packages"
+ExecStart=/usr/local/bin/python3.12 /opt/weatherstation/src/main.py --daemon --silent --db /deepsink1/weatherstation/data/weather_data.db --log /opt/weatherstation/logs/weather_daemon.log --pid /opt/weatherstation/run/weather_daemon.pid
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=weather-daemon
+
+# Security hardening
+PrivateTmp=true
+NoNewPrivileges=true
+ReadWritePaths=/deepsink1/weatherstation/data /opt/weatherstation/logs /opt/weatherstation/run /opt/weatherstation/config
+
+# Resource limits
+MemoryLimit=500M
+CPUQuota=50%
+
+# Kill the daemon gracefully
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

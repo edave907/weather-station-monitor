@@ -1,0 +1,16 @@
+/opt/weatherstation/logs/weather_daemon.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 david david
+    sharedscripts
+    postrotate
+        # Send USR1 signal to daemon to reopen log file
+        if [ -f /opt/weatherstation/run/weather_daemon.pid ]; then
+            kill -USR1 $(cat /opt/weatherstation/run/weather_daemon.pid) 2>/dev/null || true
+        fi
+    endscript
+}
