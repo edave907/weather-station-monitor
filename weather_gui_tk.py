@@ -5,7 +5,7 @@ Completely decoupled from the backend - only reads from database.
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from tkcalendar import DateEntry
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -338,8 +338,10 @@ class WeatherGUI:
         self.chart_vars = {}
         chart_options = [
             ("Temperature", "Temperature (°C)"),
+            ("Temperature (F)", "Temperature (°F)"),
             ("Humidity", "Humidity (%)"),
             ("Pressure", "Pressure (hPa)"),
+            ("Pressure (inHg)", "Pressure (inHg)"),
             ("Wind Speed", "Wind Speed (from anemometer)"),
             ("Wind Direction", "Wind Direction (degrees)"),
             ("Irradiance", "Irradiance/Illuminance"),
@@ -368,6 +370,11 @@ class WeatherGUI:
         calibration_btn = ttk.Button(row3_frame, text="Calibration",
                                     command=self.open_calibration_window)
         calibration_btn.grid(row=button_row, column=2, pady=(10, 0), padx=(5, 0))
+
+        # Save PDF button
+        save_pdf_btn = ttk.Button(row3_frame, text="Save PDF",
+                                  command=self.save_chart_pdf)
+        save_pdf_btn.grid(row=button_row + 1, column=0, columnspan=3, pady=(5, 0))
 
     def toggle_custom_range_controls(self, enabled: bool):
         """Enable or disable custom range controls."""
@@ -550,6 +557,28 @@ class WeatherGUI:
         """Legacy method - now replaced by delta-based calculation."""
         # This method is kept for compatibility but not used
         return 0
+
+    def save_chart_pdf(self):
+        """Save the current weather chart as a PDF file."""
+        # Generate default filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        default_filename = f"weather_chart_{timestamp}.pdf"
+
+        # Open file save dialog
+        filepath = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")],
+            initialfile=default_filename,
+            title="Save Weather Chart as PDF"
+        )
+
+        if filepath:
+            try:
+                # Save the figure to PDF
+                self.fig.savefig(filepath, format='pdf', bbox_inches='tight', dpi=150)
+                messagebox.showinfo("Success", f"Chart saved to:\n{filepath}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save PDF:\n{str(e)}")
 
     def open_calibration_window(self):
         """Open the sensor calibration window."""
@@ -1010,8 +1039,10 @@ class WeatherGUI:
                 times = []
                 data_dict = {
                     'temperatures': [],
+                    'temperatures_f': [],
                     'humidities': [],
                     'pressures': [],
+                    'pressures_inhg': [],
                     'irradiances': [],
                     'wind_directions': [],
                     'wind_speeds': [],
@@ -1029,9 +1060,13 @@ class WeatherGUI:
                         times.append(timestamp)
 
                         # Extract all data fields
-                        data_dict['temperatures'].append(row[1])  # temperature
+                        temp_c = row[1]  # temperature in Celsius
+                        data_dict['temperatures'].append(temp_c)
+                        data_dict['temperatures_f'].append(temp_c * 9/5 + 32 if temp_c is not None else None)  # Fahrenheit
                         data_dict['humidities'].append(row[2])    # humidity
-                        data_dict['pressures'].append(row[3])     # pressure
+                        pressure_hpa = row[3]  # pressure in hPa
+                        data_dict['pressures'].append(pressure_hpa)
+                        data_dict['pressures_inhg'].append(pressure_hpa * 0.02953 if pressure_hpa is not None else None)  # inHg
                         data_dict['irradiances'].append(row[4])   # irradiance
                         data_dict['wind_directions'].append(row[5])  # wind_direction
                         data_dict['rain_gauge_counts'].append(row[6])  # rain_gauge_count
@@ -1054,8 +1089,10 @@ class WeatherGUI:
                     num_charts = len(self.selected_charts)
                     chart_configs = {
                         'Temperature': {'data': data_dict['temperatures'], 'color': 'red', 'ylabel': 'Temperature (°C)'},
+                        'Temperature (F)': {'data': data_dict['temperatures_f'], 'color': 'red', 'ylabel': 'Temperature (°F)'},
                         'Humidity': {'data': data_dict['humidities'], 'color': 'blue', 'ylabel': 'Humidity (%)'},
                         'Pressure': {'data': data_dict['pressures'], 'color': 'green', 'ylabel': 'Pressure (hPa)'},
+                        'Pressure (inHg)': {'data': data_dict['pressures_inhg'], 'color': 'green', 'ylabel': 'Pressure (inHg)'},
                         'Irradiance': {'data': data_dict['irradiances'], 'color': 'orange', 'ylabel': 'Irradiance'},
                         'Wind Direction': {'data': data_dict['wind_directions'], 'color': 'purple', 'ylabel': 'Wind Direction (°)'},
                         'Wind Speed': {'data': data_dict['wind_speeds'], 'color': 'brown', 'ylabel': 'Wind Speed (km/h)'},
